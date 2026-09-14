@@ -29,7 +29,7 @@ and never forget that you are more special
 than you probably realise. 🌷
 
 — Someone who thinks Chandini deserves
-a little extra happiness today. ♡;
+a little extra happiness today. ♡`;
 
 let meterStarted = false;
 let noteStarted = false;

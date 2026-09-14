@@ -7,29 +7,16 @@ const meterNext = document.getElementById("meterNext");
 const typedText = document.getElementById("typedText");
 const finalBtn = document.getElementById("finalBtn");
 
-const note = `Dear Chandini,
+const note = `You know what's funny?
+I could write a hundred things about you,
+but somehow none of them would be enough.
 
-I don't really know how to put everything I feel into a few lines,
-but I wanted to make something that could remind you
-of just how special you are.
+So I'll keep it simple:
+I'm really glad you exist. 💗
 
-There is something about your smile,
-your little expressions, and the way you carry yourself
-that makes you impossible not to notice. 💗
-
-Maybe it's the way you make ordinary moments feel a little nicer.
-Maybe it's simply because you're you.
-
-Whatever the reason is,
-I'm genuinely glad that our paths crossed.
-
-So here's a tiny reminder for you:
-keep smiling, keep being your beautiful self,
-and never forget that you are more special
-than you probably realise. 🌷
-
-— Someone who thinks Chandini deserves
-a little extra happiness today. ♡`;
+Keep smiling, keep being you,
+and remember that someone out there
+thinks you're pretty amazing.`;
 
 let meterStarted = false;
 let noteStarted = false;
@@ -43,12 +30,10 @@ function showScreen(id) {
     meterStarted = true;
     runMeter();
   }
-
   if (id === "note" && !noteStarted) {
     noteStarted = true;
     typeNote();
   }
-
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
@@ -59,10 +44,8 @@ buttons.forEach(button => {
 function runMeter() {
   let value = 0;
   const target = 120;
-
   const timer = setInterval(() => {
     value += value < 80 ? 3 : 1;
-
     if (value >= target) {
       value = target;
       clearInterval(timer);
@@ -72,31 +55,99 @@ function runMeter() {
       meterNext.classList.remove("hidden");
       return;
     }
-
     percentage.textContent = `${value}%`;
     progressBar.style.width = `${Math.min(value, 100)}%`;
-
-    if (value > 70) {
-      warning.textContent = "Cuteness levels getting dangerous...";
-    } else if (value > 35) {
-      warning.textContent = "Still calculating...";
-    }
+    if (value > 70) warning.textContent = "Cuteness levels getting dangerous...";
+    else if (value > 35) warning.textContent = "Still calculating...";
   }, 55);
 }
 
 function typeNote() {
   typedText.textContent = "";
   let i = 0;
-
   const timer = setInterval(() => {
     typedText.textContent += note[i];
     i++;
-
     if (i >= note.length) {
       clearInterval(timer);
       finalBtn.classList.remove("hidden");
     }
   }, 28);
+}
+
+/* Draggable photo deck */
+const deck = document.getElementById("memoryDeck");
+const deckHelp = document.getElementById("deckHelp");
+const deckCount = document.getElementById("deckCount");
+let deckCards = deck ? [...deck.querySelectorAll(".memory-card")] : [];
+let dragging = null;
+let startX = 0, startY = 0, currentX = 0, currentY = 0;
+
+function updateDeck() {
+  deckCards.forEach((card, index) => {
+    const depth = Math.min(index, 9);
+    const scale = 1 - depth * .025;
+    const y = depth * 8;
+    const rot = depth % 2 ? 1.3 : -1.1;
+    card.style.zIndex = String(20 - depth);
+    card.style.transform = `translateY(${y}px) scale(${scale}) rotate(${rot}deg)`;
+  });
+  deckCount.textContent = `${deckCards.length} photo${deckCards.length === 1 ? "" : "s"} left`;
+  if (deckCards.length === 0) {
+    deckHelp.textContent = "That's all of them. ❤️";
+    setTimeout(() => showScreen("sorry"), 750);
+  }
+}
+
+function pointerDown(e) {
+  if (!deckCards.length || e.currentTarget !== deckCards[0]) return;
+  dragging = e.currentTarget;
+  const point = e.touches ? e.touches[0] : e;
+  startX = point.clientX;
+  startY = point.clientY;
+  currentX = 0; currentY = 0;
+  dragging.style.transition = "none";
+  dragging.setPointerCapture?.(e.pointerId);
+}
+
+function pointerMove(e) {
+  if (!dragging) return;
+  const point = e.touches ? e.touches[0] : e;
+  currentX = point.clientX - startX;
+  currentY = point.clientY - startY;
+  const rotation = currentX * .055;
+  dragging.style.transform = `translate(${currentX}px, ${currentY}px) rotate(${rotation}deg)`;
+}
+
+function pointerUp() {
+  if (!dragging) return;
+  const card = dragging;
+  const threshold = Math.max(90, window.innerWidth * .18);
+  const direction = currentX >= 0 ? "right" : "left";
+
+  if (Math.abs(currentX) > threshold || Math.abs(currentY) > 150) {
+    card.classList.add(direction === "right" ? "fly-right" : "fly-left");
+    const oldCards = deckCards;
+    deckCards = deckCards.slice(1);
+    setTimeout(() => {
+      card.remove();
+      updateDeck();
+    }, 430);
+  } else {
+    card.style.transition = "transform .3s ease";
+    card.style.transform = "translate(0,0) rotate(0deg)";
+  }
+  dragging = null;
+}
+
+if (deck) {
+  deckCards.forEach(card => {
+    card.addEventListener("pointerdown", pointerDown);
+    card.addEventListener("pointermove", pointerMove);
+    card.addEventListener("pointerup", pointerUp);
+    card.addEventListener("pointercancel", pointerUp);
+  });
+  updateDeck();
 }
 
 document.getElementById("restart").addEventListener("click", () => {
